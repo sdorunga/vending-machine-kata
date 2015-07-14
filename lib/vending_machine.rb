@@ -6,17 +6,17 @@ class VendingMachine
   ]
 
   def initialize(products)
+    @inserted_coins = []
+    @coins = []
     @products = products
-    @running_total = 0
     @message = nil
     @change = 0
   end
 
   def insert_coins(coins)
-    coins_total = coins.reduce(0) do |acc, coin|
-       acc += coin_value(coin)
+    coins.each do |coin|
+      @inserted_coins << coin
     end
-    @running_total += coins_total
   end
 
   def check_display
@@ -25,24 +25,16 @@ class VendingMachine
       @message = nil
       message
     else
-      @running_total == 0 ? "INSERT COINS" : to_currency(@running_total)
+      running_total == 0 ? "INSERT COINS" : to_currency(running_total)
     end
   end
 
   def select_product(product_name)
     selected_product = @products.find {|product| product[:name] == product_name}
-    if selected_product
-      if selected_product[:value] <= @running_total
-        @message = "THANK YOU"
-        @change = @running_total - selected_product[:value]
-        @running_total -= selected_product[:value]
-        selected_product[:name]
-      else
-        @message = "PRICE #{to_currency(selected_product[:value])}"
-        return
-      end
-    else
+    if !selected_product
       @message = "SOLD OUT"
+    else
+      dispense_product(selected_product)
     end
   end
 
@@ -51,19 +43,44 @@ class VendingMachine
   end
 
   def return_coins
-    @change = @running_total
-    @running_total = 0
+    amount = running_total
+    give_change(amount)
   end
 
   private 
+
+  def running_total
+    @inserted_coins.map {|coin| coin_value(coin) }.reduce(0, &:+)
+  end
+
+  def dispense_product(product)
+    if can_afford_product?(product)
+      amount = running_total - product[:value]
+      give_change(amount)
+      @message = "THANK YOU"
+      product[:name]
+    else
+      @message = "PRICE #{to_currency(product[:value])}"
+      return
+    end
+  end
+
+  def give_change(amount)
+    @change = amount
+    @coins += @inserted_coins
+    @inserted_coins = []
+  end
+
+  def can_afford_product?(product)
+    product[:value] <= running_total
+  end
 
   def coin_value(coin)
     coin = VALID_COINS.find do |valid_coin|
       valid_coin[:size] == coin[:size] &&
       valid_coin[:weight] == coin[:weight]
     end
-    return 0 unless coin
-    coin[:value]
+    coin ? coin[:value] : 0
   end
 
   def to_currency(amount)

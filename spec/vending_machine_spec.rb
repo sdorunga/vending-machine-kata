@@ -119,17 +119,18 @@ RSpec.describe VendingMachine do
         it 'shows a thank you message after being given the product' do
           subject.insert_coins([quarter])
           subject.insert_coins([quarter])
+          subject.insert_coins([quarter])
           subject.select_product("chips")
           expect(subject.check_display).to eq("THANK YOU")
         end
 
-        it 'checking the display a second time it displays the current balance' do
+        it 'checking the display a second time it displays a neutral balance' do
           subject.insert_coins([quarter])
           subject.insert_coins([quarter])
           subject.insert_coins([quarter])
           subject.select_product("chips")
           subject.check_display
-          expect(subject.check_display).to eq("0.25")
+          expect(subject.check_display).to eq("INSERT COINS")
         end
       end
 

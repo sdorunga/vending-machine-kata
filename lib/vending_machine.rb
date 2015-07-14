@@ -1,22 +1,15 @@
+require_relative 'coin_machine'
 class VendingMachine
-  VALID_COINS = [
-     {name: "nickel", weight: 5, size: 21, value: 5 },
-     {name: "dime", weight: 2.2, size: 18, value: 10 },
-     {name: "quarter", weight: 5.6, size: 24, value: 25 }
-  ]
 
   def initialize(products)
-    @inserted_coins = []
-    @coins = []
+    @coin_machine = CoinMachine.new
     @products = products
     @message = nil
-    @change = 0
+    @change = []
   end
 
-  def insert_coins(coins)
-    coins.each do |coin|
-      @inserted_coins << coin
-    end
+  def insert_coin(coin)
+    @coin_machine.add_coin(coin)
   end
 
   def check_display
@@ -25,7 +18,7 @@ class VendingMachine
       @message = nil
       message
     else
-      running_total == 0 ? "INSERT COINS" : to_currency(running_total)
+      @coin_machine.inserted_coins_value == 0 ? "INSERT COINS" : to_currency(@coin_machine.inserted_coins_value)
     end
   end
 
@@ -39,24 +32,18 @@ class VendingMachine
   end
 
   def check_coin_return
-    to_currency(@change)
+    @change
   end
 
   def return_coins
-    amount = running_total
-    give_change(amount)
+    process_change(0)
   end
 
   private 
 
-  def running_total
-    @inserted_coins.map {|coin| coin_value(coin) }.reduce(0, &:+)
-  end
-
   def dispense_product(product)
     if can_afford_product?(product)
-      amount = running_total - product[:value]
-      give_change(amount)
+      process_change(product[:value])
       @message = "THANK YOU"
       product[:name]
     else
@@ -65,22 +52,12 @@ class VendingMachine
     end
   end
 
-  def give_change(amount)
-    @change = amount
-    @coins += @inserted_coins
-    @inserted_coins = []
+  def process_change(price)
+    @change = @coin_machine.pay(price)
   end
 
   def can_afford_product?(product)
-    product[:value] <= running_total
-  end
-
-  def coin_value(coin)
-    coin = VALID_COINS.find do |valid_coin|
-      valid_coin[:size] == coin[:size] &&
-      valid_coin[:weight] == coin[:weight]
-    end
-    coin ? coin[:value] : 0
+    product[:value] <= @coin_machine.inserted_coins_value
   end
 
   def to_currency(amount)

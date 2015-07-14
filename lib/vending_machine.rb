@@ -1,16 +1,15 @@
 class VendingMachine
   VALID_COINS = [
-     {weight: 5, size: 21, value: 5 },
-     {weight: 2.2, size: 18, value: 10 },
-     {weight: 5.6, size: 24, value: 25 }
+     {name: "nickel", weight: 5, size: 21, value: 5 },
+     {name: "dime", weight: 2.2, size: 18, value: 10 },
+     {name: "quarter", weight: 5.6, size: 24, value: 25 }
   ]
 
-  PRODUCTS = [
-    {name: 'chips', value: 50}
-  ]
-  def initialize
+  def initialize(products)
+    @products = products
     @running_total = 0
     @message = nil
+    @change = 0
   end
 
   def insert_coins(coins)
@@ -31,16 +30,29 @@ class VendingMachine
   end
 
   def select_product(product_name)
-    selected_product = PRODUCTS.find {|product| product[:name] == product_name}
+    selected_product = @products.find {|product| product[:name] == product_name}
     if selected_product
       if selected_product[:value] <= @running_total
         @message = "THANK YOU"
+        @change = @running_total - selected_product[:value]
         @running_total -= selected_product[:value]
         selected_product[:name]
       else
         @message = "PRICE #{to_currency(selected_product[:value])}"
+        return
       end
+    else
+      @message = "SOLD OUT"
     end
+  end
+
+  def check_coin_return
+    to_currency(@change)
+  end
+
+  def return_coins
+    @change = @running_total
+    @running_total = 0
   end
 
   private 

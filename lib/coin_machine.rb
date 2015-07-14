@@ -18,27 +18,34 @@ class CoinMachine
   end
 
   def add_coin(coin)
-    @inserted_coins << coin
+    return unless valid_coin?(coin)
+
+    @inserted_coins << VALID_COINS.find do |valid_coin|
+      coins_match?(valid_coin, coin)
+    end
   end
 
   def inserted_coins_value
-    @inserted_coins.map {|coin| coin_value(coin) }.reduce(0, &:+)
+    @inserted_coins.map {|coin| coin[:value] }.reduce(0, &:+)
   end
 
   def pay(price)
     paid = inserted_coins_value
-    @coins += @inserted_coins
-    @inserted_coins = []
+    store_inserted_coins
     to_coins(paid - price)
   end
 
   private
 
-  def coin_value(coin)
-    coin = VALID_COINS.find do |valid_coin|
+  def store_inserted_coins
+    @coins += @inserted_coins
+    @inserted_coins = []
+  end
+
+  def valid_coin?(coin)
+    coin = VALID_COINS.any? do |valid_coin|
       coins_match?(valid_coin, coin)
     end
-    coin ? coin[:value] : 0
   end
 
   def coins_match?(coin, other)
@@ -46,28 +53,17 @@ class CoinMachine
   end
 
   def to_coins(amount)
-    sorted_coins = @coins.sort_by { |coin| coin_value(coin) }.reverse
-    change = []
-    while !sorted_coins.empty?
-      coin = sorted_coins.first
-      if coin[:value]
+    [].tap do |change|
+      coins_by_value.each do |coin|
         if amount / coin[:value] > 0
           amount -= coin[:value]
           change << coin
         end
       end
-      sorted_coins.shift 
     end
-    #if amount == 0 
-      change 
-    #else
-    #  @message = "EXACT CHANGE ONLY"
-    #  []
-    #end
   end
 
-
-  def to_currency(amount)
-    "%.2f" % (amount.to_f / 100)
+  def coins_by_value
+    @coins.sort_by { |coin| coin[:value] }.reverse
   end
 end

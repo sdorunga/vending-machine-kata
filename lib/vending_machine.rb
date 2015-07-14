@@ -4,8 +4,13 @@ class VendingMachine
      {weight: 2.2, size: 18, value: 10 },
      {weight: 5.6, size: 24, value: 25 }
   ]
+
+  PRODUCTS = [
+    {name: 'chips', value: 50}
+  ]
   def initialize
     @running_total = 0
+    @message = nil
   end
 
   def insert_coins(coins)
@@ -16,7 +21,26 @@ class VendingMachine
   end
 
   def check_display
-    @running_total == 0 ? "INSERT COINS" : to_currency(@running_total)
+    if @message 
+      message = @message
+      @message = nil
+      message
+    else
+      @running_total == 0 ? "INSERT COINS" : to_currency(@running_total)
+    end
+  end
+
+  def select_product(product_name)
+    selected_product = PRODUCTS.find {|product| product[:name] == product_name}
+    if selected_product
+      if selected_product[:value] <= @running_total
+        @message = "THANK YOU"
+        @running_total -= selected_product[:value]
+        selected_product[:name]
+      else
+        @message = "PRICE #{to_currency(selected_product[:value])}"
+      end
+    end
   end
 
   private 
